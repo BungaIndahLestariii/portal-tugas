@@ -140,6 +140,60 @@ def blob_upload():
     except Exception as exc:
         return jsonify({'error': str(exc)}), 400
 
+import base64
+
+@app.post('/api/blob-upload')
+def blob_upload():
+    denied = require_auth()
+    if denied:
+        return denied
+
+    token = os.getenv('BLOB_READ_WRITE_TOKEN', '')
+    if not token:
+        return jsonify({'error': 'BLOB_READ_WRITE_TOKEN belum diatur di Environment Variables Vercel.'}), 500
+
+    body = request.get_json(silent=True) or {}
+    event_type = body.get('type')
+
+    # 1. Tahap pembuatan token upload untuk browser
+    if event_type == 'blob.generate-client-token':
+        payload_data = body.get('payload') or {}
+        pathname = payload_data.get('pathname', 'lampiran')
+        multipart = bool(payload_data.get('multipart', False))
+
+        # Ambil storeId dari format token: vercel_blob_rw_<STORE_ID>_<SECRET>
+        parts = token.split('_')
+        store_id = parts[3] if len(parts) >= 4 else ''
+
+        valid_until = int((time.time() + 3600) * 1000)  # Berlaku 1 jam
+        token_payload = json.dumps({
+            'storeId': store_id,
+            'pathname': pathname,
+            'access': 'public',
+            'addRandomSuffix': True,
+            'multipart': multipart,
+            'maximumSizeInBytes': 1024 * 1024 * 1024,
+            'validUntil': valid_until,
+        }, separators=(',', ':'))
+
+        encoded_payload = base64.urlsafe_b64encode(token_payload.encode()).decode().rstrip('=')
+        signature = hmac.new(token.encode(), encoded_payload.encode(), hashlib.sha256).hexdigest()
+        client_token = f'vercel_blob_client_{store_id}_{encoded_payload}.{signature}'
+
+        return jsonify({
+            'type': event_type,
+            'clientToken': client_token,
+        })
+
+    # 2. Tahap konfirmasi setelah file selesai diunggah ke Blob
+    if event_type == 'blob.upload-completed':
+        return jsonify({'type': event_type, 'response': 'ok'})
+
+    return jsonify({'error': 'Tipe event tidak dikenali.'}), 400
+
+
+# Vercel menggunakan objek WSGI `app` ini.
+
 
 # Vercel menggunakan objek WSGI `app` ini.
 
