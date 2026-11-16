@@ -1,4 +1,4 @@
-import os, hmac, hashlib, time, json
+import os, hmac, hashlib, time, json, base64
 from pathlib import Path
 from flask import Flask, request, jsonify, send_from_directory, make_response
 import psycopg
@@ -109,7 +109,6 @@ def put_data():
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict) or not isinstance(payload.get('items', []), list):
         return jsonify({'error': 'Format data tidak valid.'}), 400
-    # Identitas di server dikunci; data tugas disimpan sebagai JSONB.
     payload.update({'universitas': 'Universitas Muhammadiyah Cirebon', 'nim': '240511170', 'nama': 'Bunga Indah Lestari', 'kelas': 'TI24D'})
     try:
         with db() as conn:
@@ -120,27 +119,6 @@ def put_data():
         app.logger.exception('Gagal menyimpan database')
         return jsonify({'error': 'Data gagal disimpan: ' + str(exc)}), 500
 
-@app.post('/api/blob-upload')
-def blob_upload():
-    denied = require_auth()
-    if denied:
-        return denied
-    try:
-        body = request.get_json(silent=True) or {}
-        json_response = handle_upload(
-            body=body,
-            request=request,
-            on_before_generate_token=lambda pathname, client_payload, multipart: {
-                'maximum_size_in_bytes': 1024 * 1024 * 1024,
-                'add_random_suffix': True,
-            },
-            on_upload_completed=lambda blob, token_payload: None,
-        )
-        return jsonify(json_response)
-    except Exception as exc:
-        return jsonify({'error': str(exc)}), 400
-
-import base64
 
 @app.post('/api/blob-upload')
 def blob_upload():
@@ -155,17 +133,15 @@ def blob_upload():
     body = request.get_json(silent=True) or {}
     event_type = body.get('type')
 
-    # 1. Tahap pembuatan token upload untuk browser
     if event_type == 'blob.generate-client-token':
         payload_data = body.get('payload') or {}
         pathname = payload_data.get('pathname', 'lampiran')
         multipart = bool(payload_data.get('multipart', False))
 
-        # Ambil storeId dari format token: vercel_blob_rw_<STORE_ID>_<SECRET>
         parts = token.split('_')
         store_id = parts[3] if len(parts) >= 4 else ''
 
-        valid_until = int((time.time() + 3600) * 1000)  # Berlaku 1 jam
+        valid_until = int((time.time() + 3600) * 1000)
         token_payload = json.dumps({
             'storeId': store_id,
             'pathname': pathname,
@@ -185,16 +161,10 @@ def blob_upload():
             'clientToken': client_token,
         })
 
-    # 2. Tahap konfirmasi setelah file selesai diunggah ke Blob
     if event_type == 'blob.upload-completed':
         return jsonify({'type': event_type, 'response': 'ok'})
 
     return jsonify({'error': 'Tipe event tidak dikenali.'}), 400
 
-
-# Vercel menggunakan objek WSGI `app` ini.
-
-
-# Vercel menggunakan objek WSGI `app` ini.
 
 # Vercel menggunakan objek WSGI `app` ini.
