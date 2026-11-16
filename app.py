@@ -3,6 +3,7 @@ from pathlib import Path
 from flask import Flask, request, jsonify, send_from_directory, make_response
 import psycopg
 from psycopg.rows import dict_row
+from vercel_blob.client import handle_upload
 
 BASE_DIR = Path(__file__).resolve().parent
 app = Flask(__name__)
@@ -120,5 +121,27 @@ def put_data():
         app.logger.exception('Gagal menyimpan database')
         return jsonify({'error': 'Data gagal disimpan: ' + str(exc)}), 500
 
+@app.post('/api/blob-upload')
+def blob_upload():
+    denied = require_auth()
+    if denied:
+        return denied
+    try:
+        body = request.get_json(silent=True) or {}
+        json_response = handle_upload(
+            body=body,
+            request=request,
+            on_before_generate_token=lambda pathname, client_payload, multipart: {
+                'maximum_size_in_bytes': 1024 * 1024 * 1024,
+                'add_random_suffix': True,
+            },
+            on_upload_completed=lambda blob, token_payload: None,
+        )
+        return jsonify(json_response)
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 400
+
+
+# Vercel menggunakan objek WSGI `app` ini.
 
 # Vercel menggunakan objek WSGI `app` ini.
