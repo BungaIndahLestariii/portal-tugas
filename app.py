@@ -3,7 +3,6 @@ from pathlib import Path
 from flask import Flask, request, jsonify, send_from_directory, make_response
 import psycopg
 from psycopg.rows import dict_row
-from vercel_blob.client import handle_upload
 
 BASE_DIR = Path(__file__).resolve().parent
 app = Flask(__name__)
