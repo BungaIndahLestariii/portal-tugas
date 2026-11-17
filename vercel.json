@@ -1,19 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
-    {
-      "source": "/api/blob-upload",
-      "destination": "/api/blob-upload.js"
-    },
-    {
-      "source": "/api/(.*)",
-      "destination": "/app.py"
-    },
-    {
-      "source": "/health",
-      "destination": "/app.py"
-    }
-  ],
   "functions": {
     "app.py": {
       "maxDuration": 60
