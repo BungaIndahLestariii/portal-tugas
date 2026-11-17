@@ -13,22 +13,8 @@ export default async function handler(request, response) {
       request,
       onBeforeGenerateToken: async () => {
         return {
-          allowedContentTypes: [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-powerpoint',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/zip',
-            'application/x-zip-compressed',
-            'text/plain',
-            'image/png',
-            'image/jpeg',
-            'image/jpg',
-          ],
-          maximumSizeInBytes: 1024 * 1024 * 1024, // 1 GB
+          // Tanpa batasan allowedContentTypes agar semua jenis file (PDF, Word, dll) diizinkan
+          maximumSizeInBytes: 1024 * 1024 * 1024, // Maksimal 1 GB
           addRandomSuffix: true,
         };
       },
@@ -39,6 +25,7 @@ export default async function handler(request, response) {
 
     return response.status(200).json(jsonResponse);
   } catch (error) {
+    console.error('Blob upload error:', error);
     return response.status(400).json({ error: error.message });
   }
 }
