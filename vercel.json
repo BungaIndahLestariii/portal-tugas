@@ -6,7 +6,11 @@
       "destination": "/api/blob-upload.js"
     },
     {
-      "source": "/(.*)",
+      "source": "/api/(.*)",
+      "destination": "/app.py"
+    },
+    {
+      "source": "/health",
       "destination": "/app.py"
     }
   ],
