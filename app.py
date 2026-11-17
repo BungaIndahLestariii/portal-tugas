@@ -120,12 +120,6 @@ def put_data():
         return jsonify({'error': 'Data gagal disimpan: ' + str(exc)}), 500
 
 
-@app.post('/api/blob-upload')
-def blob_upload():
-    denied = require_auth()
-    if denied:
-        return denied
-
     token = os.getenv('BLOB_READ_WRITE_TOKEN', '')
     if not token:
         return jsonify({'error': 'BLOB_READ_WRITE_TOKEN belum diatur di Environment Variables Vercel.'}), 500
