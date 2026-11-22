@@ -329,11 +329,22 @@
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
-                const result = await response.json().catch(() => ({}));
-                if (!response.ok) throw new Error(result.error || 'Login gagal.');
+                let result = {};
+                try {
+                    result = await response.json();
+                } catch (_) {
+                    if (response.status === 404) {
+                        throw new Error('Endpoint /api/login tidak ditemukan (404). Pastikan file vercel.json sudah diperbarui dan di-redeploy di Vercel.');
+                    }
+                    if (response.status === 500) {
+                        throw new Error('Server error (500). Periksa Environment Variables (PORTAL_USERNAME, PORTAL_PASSWORD, SECRET_KEY) di Vercel.');
+                    }
+                }
+                if (!response.ok) throw new Error(result.error || ('Login gagal (Status ' + response.status + '). Periksa username dan password.'));
                 errorDiv.classList.add('hidden');
                 await showDashboard();
             } catch (error) {
+                console.error('Login error:', error);
                 errorDiv.textContent = error.message;
                 errorDiv.classList.remove('hidden');
             } finally { button.disabled = false; }
