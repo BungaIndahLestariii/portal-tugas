@@ -386,7 +386,7 @@
         async function uploadFileToServer(file) {
             const maxFileSize = 1024 * 1024 * 1024;
             if (file.size > maxFileSize) throw new Error('File "' + file.name + '" melebihi batas maksimal 1 GB.');
-            if (!blobClientModule) blobClientModule = await import('https://esm.sh/@vercel/blob@2.9.0/client?bundle&target=es2022');
+            if (!blobClientModule) blobClientModule = await import('https://esm.sh/@vercel/blob@2.9.0/client?bundle');
             try {
                 const uploaded = await blobClientModule.upload(file.name, file, {
                     access: 'public',
