@@ -382,69 +382,34 @@
         let dashboardFilter = '';
 
         // File diunggah langsung dari browser ke Vercel Blob agar tidak melewati batas request fungsi.
-
-let blobClientModule;
-
-async function uploadFileToServer(file) {
-    const maxFileSize = 1024 * 1024 * 1024;
-
-    if (file.size > maxFileSize) {
-        throw new Error(
-            'File "' + file.name + '" melebihi batas maksimal 1 GB.'
-        );
-    }
-
-    try {
-        // Memuat SDK Vercel Blob
-        if (!blobClientModule) {
-            blobClientModule = await import(
-                'https://esm.sh/@vercel/blob@2.9.0/client?bundle&target=es2022'
-            );
-        }
-
-        if (typeof blobClientModule.upload !== 'function') {
-            throw new Error('Fungsi upload Vercel Blob tidak ditemukan.');
-        }
-
-        console.log('Memulai upload:', file.name, file.size);
-
-        const uploadUrl = new URL(
-            '/api/blob-upload',
-            window.location.origin
-        ).href;
-
-        const uploaded = await blobClientModule.upload(
-            file.name,
-            file,
-            {
-                access: 'public',
-                handleUploadUrl: uploadUrl,
-                multipart: file.size > 100 * 1024 * 1024
+        let blobClientModule;
+        async function uploadFileToServer(file) {
+            const maxFileSize = 1024 * 1024 * 1024;
+            if (file.size > maxFileSize) throw new Error('File "' + file.name + '" melebihi batas maksimal 1 GB.');
+            if (!blobClientModule) {
+                try {
+                    blobClientModule = await import('https://esm.sh/@vercel/blob/client');
+                } catch (importErr) {
+                    console.error('Gagal memuat module Vercel Blob dari esm.sh:', importErr);
+                    throw new Error('Gagal memuat modul pengunggah file. Periksa koneksi internet.');
+                }
             }
-        );
+            
+            // Bersihkan nama file agar tidak mengandung spasi atau karakter ilegal di URL storage
+            const safePathname = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
 
-        if (!uploaded || !uploaded.url) {
-            throw new Error('URL file tidak diterima dari Vercel Blob.');
+            const uploaded = await blobClientModule.upload(safePathname || file.name, file, {
+                access: 'public',
+                handleUploadUrl: '/api/blob-upload',
+                multipart: file.size > 100 * 1024 * 1024
+            });
+
+            if (!uploaded || !uploaded.url) {
+                throw new Error('Gagal mendapatkan tautan unduhan file dari Vercel Blob.');
+            }
+
+            return { name: file.name, url: uploaded.url, type: file.type || '' };
         }
-
-        console.log('Upload berhasil:', uploaded.url);
-
-        return {
-            name: file.name,
-            url: uploaded.url,
-            type: file.type || ''
-        };
-
-    } catch (error) {
-        console.error('UPLOAD ERROR:', error);
-
-        throw new Error(
-            'Gagal mengunggah "' + file.name + '": ' +
-            (error?.message || String(error))
-        );
-    }
-}
-
 
         document.getElementById('task-form').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -457,6 +422,7 @@ async function uploadFileToServer(file) {
                 const attachments = await Promise.all(files.map(uploadFileToServer));
                 await pushNewItem(attachments);
             } catch (error) {
+                console.error('Upload / Simpan error:', error);
                 alert(error.message || 'Unggahan gagal. Periksa koneksi Vercel Blob.');
             } finally {
                 submitButton.disabled = false;
