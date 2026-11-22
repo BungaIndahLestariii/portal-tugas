@@ -72,12 +72,14 @@ def login():
     body = request.get_json(silent=True) or {}
     input_user = str(body.get('username', '')).strip()
     input_pass = str(body.get('password', ''))
+
     # Toleransi format: cocokkan persis atau abaikan huruf besar/kecil & spasi untuk username
     user_match = (
         hmac.compare_digest(input_user, USERNAME) or
         hmac.compare_digest(input_user.lower().replace(' ', ''), USERNAME.lower().replace(' ', ''))
     )
     pass_match = hmac.compare_digest(input_pass, PASSWORD)
+
     if user_match and pass_match:
         response = make_response(jsonify({'ok': True}))
         response.set_cookie(COOKIE_NAME, make_auth_token(), max_age=COOKIE_MAX_AGE, httponly=True, secure=True, samesite='Lax', path='/')

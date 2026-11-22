@@ -7,15 +7,15 @@
     },
     {
       "source": "/api/(.*)",
-      "destination": "/app.py"
+      "destination": "/api/index.py"
     },
     {
       "source": "/health",
-      "destination": "/app.py"
+      "destination": "/api/index.py"
     }
   ],
   "functions": {
-    "app.py": {
+    "api/index.py": {
       "maxDuration": 60
     },
     "api/blob-upload.js": {
