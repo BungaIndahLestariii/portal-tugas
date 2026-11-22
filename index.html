@@ -399,7 +399,7 @@
             if (file.size > maxFileSize) throw new Error('File "' + file.name + '" melebihi batas maksimal 1 GB.');
             if (!blobClientModule) {
                 try {
-                    blobClientModule = await import('https://esm.sh/@vercel/blob/client');
+                   blobClientModule = await import('https://esm.sh/@vercel/blob@2.6.1/client');
                 } catch (importErr) {
                     console.error('Gagal memuat module Vercel Blob dari esm.sh:', importErr);
                     throw new Error('Gagal memuat modul pengunggah file. Periksa koneksi internet.');
